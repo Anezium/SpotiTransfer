@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transfer - SpotiTransfer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z" />
+                </svg>
+                <h1>SpotiTransfer</h1>
+            </div>
+        </header>
+
+        <div class="card">
+            <h2>🚀 Transfer in Progress</h2>
+
+            <div
+                style="display: flex; gap: 1rem; align-items: center; justify-content: center; margin: 1.5rem 0; flex-wrap: wrap;">
+                <div class="user-profile" style="flex: 1; min-width: 180px;">
+                    <div class="user-avatar">
+                        {% if source_user.image %}
+                        <img src="{{ source_user.image }}" alt="">
+                        {% else %}
+                        {{ source_user.display_name[0].upper() }}
+                        {% endif %}
+                    </div>
+                    <div class="user-info">
+                        <h3>{{ source_user.display_name }}</h3>
+                        <p>Source</p>
+                    </div>
+                </div>
+                <div style="font-size: 2rem;" id="arrowIcon">→</div>
+                <div class="user-profile" style="flex: 1; min-width: 180px;">
+                    <div class="user-avatar">
+                        {% if dest_user.image %}
+                        <img src="{{ dest_user.image }}" alt="">
+                        {% else %}
+                        {{ dest_user.display_name[0].upper() }}
+                        {% endif %}
+                    </div>
+                    <div class="user-info">
+                        <h3>{{ dest_user.display_name }}</h3>
+                        <p>Destination</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-text">
+                    <span id="progressCount">0 / {{ tracks_count }} tracks</span>
+                    <span id="progressPercent">0%</span>
+                </div>
+            </div>
+
+            <div id="currentBatch" class="status info" style="display: none;">
+                <div class="spinner"></div>
+                <span id="batchInfo">Transferring...</span>
+            </div>
+
+            <div id="completeMessage" style="display: none; text-align: center;">
+                <div class="status success" style="font-size: 1.2rem;">
+                    🎉 Transfer Complete!
+                </div>
+                <p style="margin: 1rem 0; color: var(--spotify-light-gray);">
+                    <span id="finalCount">0</span> tracks have been added to {{ dest_user.display_name }}'s Liked Songs
+                </p>
+                <a href="{{ url_for('reset') }}" class="btn btn-secondary">
+                    Start Another Transfer
+                </a>
+            </div>
+
+            <div id="startButton" style="text-align: center; margin-top: 1.5rem;">
+                <button onclick="startTransfer()" class="btn btn-primary"
+                    style="font-size: 1.1rem; padding: 16px 48px;">
+                    ▶️ Start Transfer
+                </button>
+                <p style="color: var(--spotify-light-gray); margin-top: 0.5rem; font-size: 0.9rem;">
+                    Estimated time: ~{{ (tracks_count / 10 * 3)|round|int }} seconds
+                </p>
+            </div>
+        </div>
+
+        <div id="errorLog" style="display: none;">
+            <div class="card">
+                <h2 style="color: #e74c3c;">⚠️ Errors</h2>
+                <ul id="errorList" style="color: var(--spotify-light-gray);"></ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const progressFill = document.getElementById('progressFill');
+        const progressCount = document.getElementById('progressCount');
+        const progressPercent = document.getElementById('progressPercent');
+        const currentBatch = document.getElementById('currentBatch');
+        const batchInfo = document.getElementById('batchInfo');
+        const completeMessage = document.getElementById('completeMessage');
+        const finalCount = document.getElementById('finalCount');
+        const startButton = document.getElementById('startButton');
+        const arrowIcon = document.getElementById('arrowIcon');
+        const errorLog = document.getElementById('errorLog');
+        const errorList = document.getElementById('errorList');
+
+        function startTransfer() {
+            startButton.style.display = 'none';
+            currentBatch.style.display = 'flex';
+
+            const eventSource = new EventSource('{{ url_for("transfer_stream") }}');
+
+            eventSource.onmessage = function (event) {
+                const data = JSON.parse(event.data);
+
+                if (data.type === 'progress') {
+                    progressFill.style.width = data.percent + '%';
+                    progressCount.textContent = `${data.transferred} / ${data.total} tracks`;
+                    progressPercent.textContent = data.percent + '%';
+
+                    if (data.current_track) {
+                        batchInfo.textContent = `Adding: ${data.current_track}`;
+                    }
+                } else if (data.type === 'rate_limit') {
+                    batchInfo.textContent = `Rate limit hit, waiting ${data.retry_after}s...`;
+                } else if (data.type === 'error') {
+                    errorLog.style.display = 'block';
+                    const li = document.createElement('li');
+                    li.textContent = data.track ? `${data.track}: ${data.message}` : data.message;
+                    errorList.appendChild(li);
+                } else if (data.type === 'complete') {
+                    eventSource.close();
+                    currentBatch.style.display = 'none';
+                    progressFill.style.width = '100%';
+                    progressPercent.textContent = '100%';
+                    progressCount.textContent = `${data.transferred} / ${data.total} tracks`;
+                    finalCount.textContent = data.transferred;
+                    arrowIcon.textContent = '✓';
+                    arrowIcon.style.color = '#1DB954';
+                    completeMessage.style.display = 'block';
+                }
+            };
+
+            eventSource.onerror = function () {
+                eventSource.close();
+                batchInfo.innerHTML = '<span style="color: #e74c3c;">Connection error. Please refresh and try again.</span>';
+            };
+        }
+    </script>
+</body>
+
+</html>

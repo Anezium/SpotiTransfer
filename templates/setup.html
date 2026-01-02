@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup - SpotiTransfer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z" />
+                </svg>
+                <h1>SpotiTransfer</h1>
+            </div>
+            <p class="subtitle">Spotify Application Setup</p>
+        </header>
+
+        <div class="card">
+            <h2>📋 Setup Guide</h2>
+            <p style="margin-bottom: 1.5rem;">Follow these steps to create your Spotify application (about 2 minutes).
+            </p>
+
+            <ol class="setup-steps">
+                <li>
+                    <span class="number">1</span>
+                    <div>
+                        <strong>Open the Spotify Developer Dashboard</strong>
+                        <p style="color: var(--spotify-light-gray); margin-top: 0.5rem;">
+                            <a href="https://developer.spotify.com/dashboard" target="_blank"
+                                style="color: var(--spotify-green);">
+                                👉 developer.spotify.com/dashboard
+                            </a>
+                        </p>
+                        <p style="color: var(--spotify-light-gray);">Log in with your Spotify account (any account
+                            works).</p>
+                    </div>
+                </li>
+                <li>
+                    <span class="number">2</span>
+                    <div>
+                        <strong>Create a new application</strong>
+                        <p style="color: var(--spotify-light-gray); margin-top: 0.5rem;">
+                            Click the <strong style="color: var(--spotify-white);">"Create App"</strong> button
+                        </p>
+                    </div>
+                </li>
+                <li>
+                    <span class="number">3</span>
+                    <div>
+                        <strong>Fill in the details</strong>
+                        <ul style="color: var(--spotify-light-gray); margin-top: 0.5rem; margin-left: 1rem;">
+                            <li><strong>App name:</strong> SpotiTransfer</li>
+                            <li><strong>App description:</strong> Transfer liked songs</li>
+                            <li><strong>Redirect URI:</strong> <code class="code-block"
+                                    style="display: inline; padding: 2px 8px;">http://127.0.0.1:5000/callback</code>
+                            </li>
+                        </ul>
+                        <p style="color: var(--spotify-light-gray); margin-top: 0.5rem;">
+                            Check "Web API" and accept the terms.
+                        </p>
+                    </div>
+                </li>
+                <li>
+                    <span class="number">4</span>
+                    <div>
+                        <strong>Get your credentials</strong>
+                        <p style="color: var(--spotify-light-gray); margin-top: 0.5rem;">
+                            In your app's <strong style="color: var(--spotify-white);">Settings</strong>, copy the
+                            <strong style="color: var(--spotify-white);">Client ID</strong> and click "View client
+                            secret" to get the <strong style="color: var(--spotify-white);">Client Secret</strong>.
+                        </p>
+                    </div>
+                </li>
+            </ol>
+        </div>
+
+        <div class="card">
+            <h2>🔑 Enter Your Credentials</h2>
+            <form action="{{ url_for('save_credentials') }}" method="POST">
+                <div class="form-group">
+                    <label for="client_id">Client ID</label>
+                    <input type="text" id="client_id" name="client_id" placeholder="Paste your Client ID here" required>
+                </div>
+                <div class="form-group">
+                    <label for="client_secret">Client Secret</label>
+                    <input type="password" id="client_secret" name="client_secret"
+                        placeholder="Paste your Client Secret here" required>
+                </div>
+                <div style="margin-top: 1.5rem; text-align: center;">
+                    <button type="submit" class="btn btn-primary">
+                        Save and Continue
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div style="text-align: center; margin-top: 1rem;">
+            <a href="{{ url_for('index') }}" style="color: var(--spotify-light-gray);">← Back to home</a>
+        </div>
+    </div>
+</body>
+
+</html>

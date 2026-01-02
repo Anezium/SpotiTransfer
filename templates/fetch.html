@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fetching Tracks - SpotiTransfer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z" />
+                </svg>
+                <h1>SpotiTransfer</h1>
+            </div>
+        </header>
+
+        <div class="card">
+            <h2>📥 Fetching Liked Songs</h2>
+
+            <div class="user-profile">
+                <div class="user-avatar">
+                    {% if source_user.image %}
+                    <img src="{{ source_user.image }}" alt="">
+                    {% else %}
+                    {{ source_user.display_name[0].upper() }}
+                    {% endif %}
+                </div>
+                <div class="user-info">
+                    <h3>{{ source_user.display_name }}</h3>
+                    <p>Source account</p>
+                </div>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-text">
+                    <span id="progressCount">Initializing...</span>
+                    <span id="progressPercent">0%</span>
+                </div>
+            </div>
+
+            <div id="currentTrack" class="status info" style="display: none;">
+                <div class="spinner"></div>
+                <span id="trackName">Loading...</span>
+            </div>
+
+            <div id="completeMessage" style="display: none; text-align: center; margin-top: 2rem;">
+                <div class="status success">
+                    ✅ <span id="totalTracks">0</span> tracks fetched successfully!
+                </div>
+                <a href="{{ url_for('show_tracks') }}" class="btn btn-primary" style="margin-top: 1rem;">
+                    View Tracks →
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const progressFill = document.getElementById('progressFill');
+        const progressCount = document.getElementById('progressCount');
+        const progressPercent = document.getElementById('progressPercent');
+        const currentTrack = document.getElementById('currentTrack');
+        const trackName = document.getElementById('trackName');
+        const completeMessage = document.getElementById('completeMessage');
+        const totalTracksEl = document.getElementById('totalTracks');
+
+        let total = 0;
+        let fetched = 0;
+
+        const eventSource = new EventSource('{{ url_for("fetch_stream") }}');
+
+        eventSource.onmessage = function (event) {
+            const data = JSON.parse(event.data);
+
+            if (data.type === 'total') {
+                total = data.total;
+                progressCount.textContent = `0 / ${total} tracks`;
+            } else if (data.type === 'track') {
+                currentTrack.style.display = 'flex';
+                trackName.textContent = `${data.name} - ${data.artists}`;
+            } else if (data.type === 'progress') {
+                fetched = data.fetched;
+                const percent = Math.round((fetched / data.total) * 100);
+                progressFill.style.width = percent + '%';
+                progressCount.textContent = `${fetched} / ${data.total} tracks`;
+                progressPercent.textContent = percent + '%';
+            } else if (data.type === 'complete') {
+                eventSource.close();
+                currentTrack.style.display = 'none';
+                progressFill.style.width = '100%';
+                progressPercent.textContent = '100%';
+                totalTracksEl.textContent = data.count;
+                completeMessage.style.display = 'block';
+            } else if (data.type === 'rate_limit') {
+                trackName.textContent = `Rate limit hit, waiting ${data.retry_after}s...`;
+            }
+        };
+
+        eventSource.onerror = function () {
+            eventSource.close();
+            currentTrack.innerHTML = '<span style="color: #e74c3c;">Connection error. Please refresh the page.</span>';
+        };
+    </script>
+</body>
+
+</html>

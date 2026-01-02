@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpotiTransfer - Transfer Your Liked Songs</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z" />
+                </svg>
+                <h1>SpotiTransfer</h1>
+            </div>
+            <p class="subtitle">Transfer your Liked Songs from one account to another</p>
+        </header>
+
+        {% if not configured %}
+        <!-- Not configured - show setup prompt -->
+        <div class="card">
+            <h2><span class="step">!</span> Configuration Required</h2>
+            <p>To use SpotiTransfer, you first need to create an application on the Spotify Developer Dashboard.</p>
+            <p style="margin-top: 1rem; color: var(--spotify-light-gray);">It's quick (~2 minutes) and completely free.
+            </p>
+            <div style="margin-top: 1.5rem; text-align: center;">
+                <a href="{{ url_for('setup') }}" class="btn btn-primary">
+                    Configure Application
+                </a>
+            </div>
+        </div>
+
+        {% else %}
+        <!-- Configured - show main flow -->
+
+        <!-- Flow Steps Indicator -->
+        <div class="flow-steps">
+            <div class="flow-step {% if source_user %}completed{% else %}active{% endif %}">
+                <div class="icon">1</div>
+                <span>Source</span>
+            </div>
+            <div class="flow-connector {% if source_user %}active{% endif %}"></div>
+            <div class="flow-step {% if source_user and not dest_user %}active{% elif dest_user %}completed{% endif %}">
+                <div class="icon">2</div>
+                <span>Destination</span>
+            </div>
+            <div class="flow-connector {% if dest_user %}active{% endif %}"></div>
+            <div class="flow-step {% if dest_user %}active{% endif %}">
+                <div class="icon">3</div>
+                <span>Transfer</span>
+            </div>
+        </div>
+
+        {% if not source_user %}
+        <!-- Step 1: Connect Source -->
+        <div class="card">
+            <h2><span class="step">1</span> Connect Source Account</h2>
+            <p>Log in to the Spotify account you want to copy Liked Songs FROM.</p>
+            <div style="margin-top: 1.5rem; text-align: center;">
+                <a href="{{ url_for('login', account_type='source') }}" class="btn btn-primary">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path
+                            d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z" />
+                    </svg>
+                    Login with Spotify
+                </a>
+            </div>
+        </div>
+
+        {% elif source_user and tracks_count > 0 and not dest_user %}
+        <!-- Source connected, tracks fetched, need destination -->
+        <div class="card">
+            <h2><span class="step">✓</span> Source Account Connected</h2>
+            <div class="user-profile">
+                <div class="user-avatar">
+                    {% if source_user.image %}
+                    <img src="{{ source_user.image }}" alt="{{ source_user.display_name }}">
+                    {% else %}
+                    {{ source_user.display_name[0].upper() }}
+                    {% endif %}
+                </div>
+                <div class="user-info">
+                    <h3>{{ source_user.display_name }}</h3>
+                    <p>{{ tracks_count }} liked tracks fetched</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2><span class="step">2</span> Connect Destination Account</h2>
+            <p>Log out of Spotify in your browser, then log in to the destination account.</p>
+            <div class="status info">
+                <span>💡</span>
+                <span>Tip: Open a private/incognito window or log out of Spotify first.</span>
+            </div>
+            <div style="margin-top: 1.5rem; text-align: center;">
+                <a href="{{ url_for('login', account_type='dest') }}" class="btn btn-primary">
+                    Connect Destination Account
+                </a>
+            </div>
+        </div>
+
+        {% elif source_user and dest_user %}
+        <!-- Both connected, ready to transfer -->
+        <div class="card">
+            <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 200px;">
+                    <p style="color: var(--spotify-light-gray); margin-bottom: 0.5rem;">Source</p>
+                    <div class="user-profile">
+                        <div class="user-avatar">
+                            {% if source_user.image %}
+                            <img src="{{ source_user.image }}" alt="">
+                            {% else %}
+                            {{ source_user.display_name[0].upper() }}
+                            {% endif %}
+                        </div>
+                        <div class="user-info">
+                            <h3>{{ source_user.display_name }}</h3>
+                            <p>{{ tracks_count }} tracks</p>
+                        </div>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; font-size: 2rem;">→</div>
+                <div style="flex: 1; min-width: 200px;">
+                    <p style="color: var(--spotify-light-gray); margin-bottom: 0.5rem;">Destination</p>
+                    <div class="user-profile">
+                        <div class="user-avatar">
+                            {% if dest_user.image %}
+                            <img src="{{ dest_user.image }}" alt="">
+                            {% else %}
+                            {{ dest_user.display_name[0].upper() }}
+                            {% endif %}
+                        </div>
+                        <div class="user-info">
+                            <h3>{{ dest_user.display_name }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div style="margin-top: 1.5rem; text-align: center;">
+                <a href="{{ url_for('transfer') }}" class="btn btn-primary"
+                    style="font-size: 1.1rem; padding: 16px 48px;">
+                    🚀 Start Transfer
+                </a>
+            </div>
+        </div>
+        {% else %}
+        <!-- Source connected but no tracks yet -->
+        <div class="card">
+            <h2><span class="step">✓</span> Source Account Connected</h2>
+            <div class="user-profile">
+                <div class="user-avatar">
+                    {% if source_user.image %}
+                    <img src="{{ source_user.image }}" alt="">
+                    {% else %}
+                    {{ source_user.display_name[0].upper() }}
+                    {% endif %}
+                </div>
+                <div class="user-info">
+                    <h3>{{ source_user.display_name }}</h3>
+                </div>
+            </div>
+            <div style="margin-top: 1rem; text-align: center;">
+                <a href="{{ url_for('fetch_tracks') }}" class="btn btn-primary">
+                    Fetch Liked Songs
+                </a>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Reset Button -->
+        {% if source_user or dest_user %}
+        <div style="text-align: center; margin-top: 2rem;">
+            <a href="{{ url_for('reset') }}" class="btn btn-secondary" style="font-size: 0.9rem; padding: 10px 24px;">
+                🔄 Start Over
+            </a>
+        </div>
+        {% endif %}
+
+        {% endif %}
+    </div>
+</body>
+
+</html>
