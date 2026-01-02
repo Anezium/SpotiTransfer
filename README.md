@@ -11,7 +11,7 @@ A web application to transfer your Liked Songs from one Spotify account to anoth
 ## Features
 
 - 🎵 **Transfer all Liked Songs** between Spotify accounts
-- 📅 **Preserve chronological order** - tracks appear in the same order as the source
+- 📅 **Preserve chronological order** - tracks appear in the same order as the source (~80-90% accurate, 1-2 tracks per 10 may be slightly out of order due to API timing)
 - 🔐 **Secure OAuth 2.0** authentication with Spotify
 - 📊 **Real-time progress** with Server-Sent Events (SSE)
 - 🎨 **Modern dark UI** inspired by Spotify's design
