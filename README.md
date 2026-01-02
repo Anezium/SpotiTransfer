@@ -6,7 +6,7 @@
 
 A web application to transfer your Liked Songs from one Spotify account to another while **preserving the chronological order**.
 
-![SpotiTransfer Dashboard](docs/screenshot.png)
+![SpotiTransfer Dashboard](docs/screenshot.pn)
 
 ## Features
 
